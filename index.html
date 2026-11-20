@@ -1,74 +1,286 @@
-   document.createElement("details");
+<!DOCTYPE html>
+<html lang="de">
+ 
+<head>
+ 
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+ 
+<title>Moritz Schule</title>
+ 
+<link rel="manifest"
+href="manifest.json">
 
-   details.open = true;
-
-   let html =
-   `<summary>${subject}</summary>`;
-
-   items.forEach(item=>{
-
-     const id =
-     `pack_${subject}_${item}`;
-
-     html += `
-     <label>
-      <input
-       class="pack"
-       type="checkbox"
-       id="${id}">
-      ${item}
-     </label>`;
-
-   });
-
-   details.innerHTML = html;
-
-   packList.appendChild(details);
-
-   const hwId =
-   `hw_${subject}`;
-
-   homeworkList.innerHTML += `
-   <label>
-    <input
-      class="hw"
-      type="checkbox"
-      id="${hwId}">
-    ${subject}
-   </label>
-   `;
-
- });
-
- document
- .querySelectorAll(
-  "input[type=checkbox]"
- )
- .forEach(cb=>{
-
-   cb.addEventListener(
-    "change",
-    saveChecks
-   );
-
- });
-
- loadChecks();
-
+<style>
+ 
+:root{
+--bg:#EEF4F1;
+--card:#F8FBFA;
+--line:#CAD8D2;
+--dark:#35584D;
+--accent:#DDE8E3;
 }
-
-dailyReset();
-loadSettings();
-buildLists();
-
-if("serviceWorker" in navigator){
-
- navigator.serviceWorker
- .register("sw.js");
-
+ 
+*{
+box-sizing:border-box;
 }
+ 
+body{
+background:var(--bg);
+color:var(--dark);
+font-family:system-ui,sans-serif;
+margin:0;
+padding:20px;
+}
+ 
+h1{
+margin:0 0 8px 0;
+}
+ 
+.subtitle{
+margin-bottom:20px;
+font-size:18px;
+font-weight:600;
+}
+ 
+.nav{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+flex-wrap:wrap;
+}
+ 
+button{
+padding:10px 14px;
+border-radius:10px;
+border:1px solid var(--line);
+cursor:pointer;
+background:#fff;
+}
+ 
+.page{
+display:none;
+}
+ 
+.page.active{
+display:block;
+}
+ 
+.card{
+background:var(--card);
+border:1px solid var(--line);
+border-radius:16px;
+padding:16px;
+margin-bottom:16px;
+}
+ 
+.grid{
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:16px;
+}
+ 
+details{
+margin-bottom:12px;
+}
+ 
+summary{
+cursor:pointer;
+font-weight:700;
+margin-bottom:8px;
+}
+ 
+label{
+display:block;
+padding:4px 0;
+}
+ 
+.progress{
+margin-top:16px;
+}
+ 
+.bar{
+width:100%;
+height:12px;
+background:white;
+border-radius:20px;
+overflow:hidden;
+border:1px solid var(--line);
+}
+ 
+.fill{
+background:#5D8777;
+height:100%;
+width:0;
+transition:.3s;
+}
+ 
+table{
+width:100%;
+border-collapse:collapse;
+}
+ 
+th,td{
+border:1px solid var(--line);
+padding:8px;
+text-align:left;
+}
+ 
+input[type=text]{
+width:100%;
+padding:10px;
+margin:8px 0 16px;
+}
+ 
+@media(max-width:900px){
+ 
+.grid{
+grid-template-columns:1fr;
+}
+ 
+}
+ 
+</style>
+ 
+</head>
+<body>
 
-</script>
+<h1>Schultasche vorbereiten</h1>
 
-</body>
-</html>
+<div id="subtitle"
+     class="subtitle"></div>
+
+<div class="nav">
+
+<button onclick="showPage('homePage')">
+🏠 Morgen vorbereiten
+</button>
+
+<button onclick="showPage('schedulePage')">
+📅 Stundenplan
+</button>
+
+<button onclick="showPage('settingsPage')">
+⚙️ Einstellungen
+</button>
+
+</div>
+
+   <div id="homePage"
+     class="page active">
+
+<div class="card">
+<strong id="targetDay"></strong>
+</div>
+
+<div class="grid">
+
+<div class="card">
+
+<h2>📚 Schulsachen</h2>
+
+<div id="packList"></div>
+
+<div class="progress">
+<div id="packText"></div>
+
+<div class="bar">
+<div id="packBar"
+     class="fill"></div>
+</div>
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<h2>📝 Hausaufgaben erledigt?</h2>
+
+<div id="homeworkList"></div>
+
+<div class="progress">
+
+<div id="hwText"></div>
+
+<div class="bar">
+<div id="hwBar"
+     class="fill"></div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+   <div id="schedulePage"
+     class="page">
+
+<div class="card">
+
+<h2>📅 Stundenplan</h2>
+
+<table>
+
+<tr>
+<th>Montag</th>
+<th>Dienstag</th>
+<th>Mittwoch</th>
+<th>Donnerstag</th>
+<th>Freitag</th>
+</tr>
+
+<tr>
+<td>Mathe</td>
+<td>Deutsch</td>
+<td>BWR</td>
+<td>Englisch</td>
+<td>Englisch</td>
+</tr>
+
+<tr>
+<td>Geographie</td>
+<td>BWR</td>
+<td>Englisch</td>
+<td>Deutsch</td>
+<td>WR</td>
+</tr>
+
+<tr>
+<td>Physik</td>
+<td>Mathe</td>
+<td>Ethik</td>
+<td>Sport</td>
+<td>Mathe</td>
+</tr>
+
+</table>
+
+</div>
+</div>
+
+<div id="settingsPage"
+     class="page">
+
+<div class="card">
+
+<h2>⚙️ Einstellungen</h2>
+
+<label>Name</label>
+<input type="text"
+       id="nameInput">
+
+<label>Klasse</label>
+<input type="text"
+       id="classInput">
+
+<button onclick="saveSettings()">
+Speichern
+</button>
+
+</div>
+</div>
