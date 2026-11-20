@@ -284,3 +284,494 @@ Speichern
 
 </div>
 </div>
+<script>
+
+/* ==========================================
+   DATEN
+========================================== */
+
+const timetable = {
+
+  Montag:{
+    Mathe:["Buch","Heft","Schnellhefter","Arbeitsheft"],
+    Geographie:["Buch","Schnellhefter"],
+    Physik:["Buch","Heft","Schnellhefter"],
+    BwR:["Buch","Schnellhefter"],
+    Ethik:["Buch","Heft"],
+    Englisch:["Buch","Schnellhefter","Arbeitsheft"],
+    Geschichte:["Buch","Schnellhefter"]
+  },
+
+  Dienstag:{
+    Deutsch:["Buch","Heft","Arbeitsheft","Schnellhefter"],
+    BwR:["Buch","Schnellhefter"],
+    Mathe:["Buch","Heft","Schnellhefter","Arbeitsheft"],
+    Musik:["Heft"],
+    IT:["Heft"]
+  },
+
+  Mittwoch:{
+    BwR:["Buch","Schnellhefter"],
+    Englisch:["Buch","Schnellhefter","Arbeitsheft"],
+    Ethik:["Buch","Heft"],
+    Deutsch:["Buch","Heft","Arbeitsheft","Schnellhefter"],
+    WR:["Buch","Schnellhefter"],
+    Geschichte:["Buch","Schnellhefter"]
+  },
+
+  Donnerstag:{
+    Englisch:["Buch","Schnellhefter","Arbeitsheft"],
+    Deutsch:["Buch","Heft","Arbeitsheft","Schnellhefter"],
+    Sport:["Sportsachen"]
+  },
+
+  Freitag:{
+    Englisch:["Buch","Schnellhefter","Arbeitsheft"],
+    WR:["Buch","Schnellhefter"],
+    Mathe:["Buch","Heft","Schnellhefter","Arbeitsheft"],
+    Musik:["Heft"],
+    Physik:["Buch","Heft","Schnellhefter"],
+    Geographie:["Buch","Schnellhefter"]
+  }
+
+};
+
+
+/* ==========================================
+   DOM
+========================================== */
+
+const subtitle =
+document.getElementById("subtitle");
+
+const targetDayLabel =
+document.getElementById("targetDay");
+
+const packList =
+document.getElementById("packList");
+
+const homeworkList =
+document.getElementById("homeworkList");
+
+const packText =
+document.getElementById("packText");
+
+const hwText =
+document.getElementById("hwText");
+
+const packBar =
+document.getElementById("packBar");
+
+const hwBar =
+document.getElementById("hwBar");
+
+const nameInput =
+document.getElementById("nameInput");
+
+const classInput =
+document.getElementById("classInput");
+
+
+/* ==========================================
+   NAVIGATION
+========================================== */
+
+function showPage(id){
+
+  document
+    .querySelectorAll(".page")
+    .forEach(function(page){
+
+      page.classList.remove("active");
+
+    });
+
+  document
+    .getElementById(id)
+    .classList.add("active");
+}
+
+
+/* ==========================================
+   NÄCHSTER SCHULTAG
+========================================== */
+
+function getNextSchoolDay(){
+
+  const weekday = new Date().getDay();
+
+  if(weekday === 0) return "Montag";
+  if(weekday === 1) return "Dienstag";
+  if(weekday === 2) return "Mittwoch";
+  if(weekday === 3) return "Donnerstag";
+  if(weekday === 4) return "Freitag";
+
+  return "Montag";
+
+}
+
+
+/* ==========================================
+   RESET
+========================================== */
+
+function dailyReset(){
+
+  const today =
+        new Date().toDateString();
+
+  const lastReset =
+        localStorage.getItem(
+          "lastReset"
+        );
+
+  if(today !== lastReset){
+
+      localStorage.removeItem(
+        "checkState"
+      );
+
+      localStorage.setItem(
+        "lastReset",
+        today
+      );
+  }
+
+}
+
+
+/* ==========================================
+   EINSTELLUNGEN
+========================================== */
+
+function loadSettings(){
+
+  const studentName =
+        localStorage.getItem(
+            "studentName"
+        ) || "Moritz";
+
+  const studentClass =
+        localStorage.getItem(
+            "studentClass"
+        ) || "8b";
+
+  nameInput.value =
+      studentName;
+
+  classInput.value =
+      studentClass;
+
+  subtitle.textContent =
+      studentName +
+      " / Klasse " +
+      studentClass;
+}
+
+
+function saveSettings(){
+
+  localStorage.setItem(
+      "studentName",
+      nameInput.value
+  );
+
+  localStorage.setItem(
+      "studentClass",
+      classInput.value
+  );
+
+  loadSettings();
+
+  alert("Gespeichert");
+
+}
+
+
+/* ==========================================
+   CHECKBOXEN SPEICHERN
+========================================== */
+
+function saveChecks(){
+
+  const state = {};
+
+  document
+    .querySelectorAll(
+      "input[type='checkbox']"
+    )
+    .forEach(function(cb){
+
+      state[cb.id] =
+          cb.checked;
+
+    });
+
+  localStorage.setItem(
+      "checkState",
+      JSON.stringify(state)
+  );
+
+  updateProgress();
+
+}
+
+
+function loadChecks(){
+
+  const state =
+      JSON.parse(
+      localStorage.getItem(
+        "checkState"
+      ) || "{}"
+  );
+
+  document
+    .querySelectorAll(
+      "input[type='checkbox']"
+    )
+    .forEach(function(cb){
+
+      cb.checked =
+          state[cb.id] === true;
+
+    });
+
+  updateProgress();
+
+}
+
+
+/* ==========================================
+   FORTSCHRITT
+========================================== */
+
+function updateProgress(){
+
+  const packBoxes =
+      Array.from(
+        document.querySelectorAll(
+          ".pack"
+        )
+      );
+
+  const hwBoxes =
+      Array.from(
+        document.querySelectorAll(
+          ".hw"
+        )
+      );
+
+  const packDone =
+      packBoxes.filter(
+        x => x.checked
+      ).length;
+
+  const hwDone =
+      hwBoxes.filter(
+        x => x.checked
+      ).length;
+
+  const packPercent =
+      packBoxes.length > 0
+      ? Math.round(
+          packDone /
+          packBoxes.length *
+          100
+        )
+      : 0;
+
+  const hwPercent =
+      hwBoxes.length > 0
+      ? Math.round(
+          hwDone /
+          hwBoxes.length *
+          100
+        )
+      : 0;
+
+  packText.textContent =
+      packDone +
+      " von " +
+      packBoxes.length +
+      " Materialien";
+
+  hwText.textContent =
+      hwDone +
+      " von " +
+      hwBoxes.length +
+      " Fächern";
+
+  packBar.style.width =
+      packPercent + "%";
+
+  hwBar.style.width =
+      hwPercent + "%";
+
+}
+
+
+/* ==========================================
+   LISTEN AUFBAUEN
+========================================== */
+
+function buildLists(){
+
+  const day =
+      getNextSchoolDay();
+
+  targetDayLabel.textContent =
+      "Vorbereitung für " +
+      day;
+
+  packList.innerHTML = "";
+  homeworkList.innerHTML = "";
+
+  Object.entries(
+      timetable[day]
+  ).forEach(function(entry){
+
+      const subject =
+            entry[0];
+
+      const items =
+            entry[1];
+
+      const details =
+          document.createElement(
+            "details"
+          );
+
+      details.open = true;
+
+      const summary =
+          document.createElement(
+            "summary"
+          );
+
+      summary.textContent =
+          subject;
+
+      details.appendChild(
+          summary
+      );
+
+      items.forEach(function(item){
+
+          const label =
+              document.createElement(
+                "label"
+              );
+
+          const checkbox =
+              document.createElement(
+                "input"
+              );
+
+          checkbox.type =
+              "checkbox";
+
+          checkbox.className =
+              "pack";
+
+          checkbox.id =
+              "pack_" +
+              subject +
+              "_" +
+              item;
+
+          label.appendChild(
+              checkbox
+          );
+
+          label.appendChild(
+              document.createTextNode(
+                  " " + item
+              )
+          );
+
+          details.appendChild(
+              label
+          );
+
+      });
+
+      packList.appendChild(
+          details
+      );
+
+      const hwLabel =
+          document.createElement(
+            "label"
+          );
+
+      const hwCheckbox =
+          document.createElement(
+            "input"
+          );
+
+      hwCheckbox.type =
+          "checkbox";
+
+      hwCheckbox.className =
+          "hw";
+
+      hwCheckbox.id =
+          "hw_" +
+          subject;
+
+      hwLabel.appendChild(
+          hwCheckbox
+      );
+
+      hwLabel.appendChild(
+          document.createTextNode(
+              " " + subject
+          )
+      );
+
+      homeworkList.appendChild(
+          hwLabel
+      );
+
+  });
+
+  document
+      .querySelectorAll(
+          "input[type='checkbox']"
+      )
+      .forEach(function(cb){
+
+          cb.addEventListener(
+              "change",
+              saveChecks
+          );
+
+      });
+
+  loadChecks();
+}
+
+
+/* ==========================================
+   START
+========================================== */
+
+dailyReset();
+
+loadSettings();
+
+buildLists();
+
+if("serviceWorker" in navigator){
+
+  navigator.serviceWorker.register(
+      "sw.js"
+  );
+
+}
+
+</script>
+
+</body>
+</html>
